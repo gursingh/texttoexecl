@@ -10,8 +10,6 @@ import java.util.List;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -20,32 +18,34 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.qorql.texttoexcel.exception.TextReaderException;
 import com.qorql.texttoexcel.response.Response;
+import com.qorql.texttoexcel.response.RowNumberResponse;
 
-public class Converter {
-	private static final String BASE_PATH = "D:\\Phist_Reviewed\\Processed\\path_lab_error\\";
+public class MedHistoryConverter {
+	private static final String BASE_PATH = Consts.MEDI_HISTORY_FILE_BASE;
 
 	static Response readTextFile(String errorFileName) {
 		Response response = new Response();
 		try {
 			List<Patient> patients = new ArrayList<Patient>();
-			List<Integer> rowNumbers = new ArrayList<Integer>();
+			List<RowNumberResponse> rowNumbers = new ArrayList<RowNumberResponse>();
 			File file = new File(BASE_PATH + errorFileName);
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line = null;
 			while ((line = br.readLine()) != null) {
-				if (line.indexOf("Row no") != -1) {
-					//rowNumbers.add(getPatientDetailRowFromLine(line));
+				if (line.indexOf("Row Number") != -1) {
+					RowNumberResponse rowNumberResponse = getPatientDetailRowFromLine(line);
+					if (rowNumberResponse != null)
+						rowNumbers.add(rowNumberResponse);
 				} else if (line.indexOf("Ignored") != -1) {
 					Patient patient = getPatientDetailFromLine(line);
 					patients.add(patient);
 				} else {
-					int rowNo = getPatientDetailRowFromLine(line);
-					if (rowNo == -1) {
+					RowNumberResponse rowNumberResponse = getPatientDetailRowFromLine(line);
+					if (rowNumberResponse != null)
+						rowNumbers.add(rowNumberResponse);
+					else {
 						Patient patient = getPatientDetailFromLine(line);
 						patients.add(patient);
-
-					} else {
-						//rowNumbers.add(rowNo);
 					}
 				}
 			}
@@ -58,63 +58,19 @@ public class Converter {
 		return response;
 	}
 
-	
-
-	static void copyRowToExcel(XSSFWorkbook wb, XSSFSheet outSheet, Row row) {
-		int rowNo = outSheet.getLastRowNum() + 1;
-		Row outRow = outSheet.createRow(rowNo);
-		for (int i = 0; i < row.getLastCellNum(); i++) {
-			Cell oldCell = row.getCell(i);
-			Cell newCell = outRow.createCell(i);
-			newCell.setCellType(oldCell.getCellType());
-
-			switch (oldCell.getCellType()) {
-			case Cell.CELL_TYPE_BLANK:
-				newCell.setCellValue(oldCell.getStringCellValue());
-				break;
-			case Cell.CELL_TYPE_BOOLEAN:
-				newCell.setCellValue(oldCell.getBooleanCellValue());
-				break;
-			case Cell.CELL_TYPE_ERROR:
-				newCell.setCellErrorValue(oldCell.getErrorCellValue());
-				break;
-			case Cell.CELL_TYPE_FORMULA:
-				newCell.setCellFormula(oldCell.getCellFormula());
-				break;
-			case Cell.CELL_TYPE_NUMERIC:
-				if (i == 4) {
-					CellStyle cellStyle = wb.createCellStyle();
-					CreationHelper createHelper = wb.getCreationHelper();
-					cellStyle.setDataFormat(createHelper.createDataFormat()
-							.getFormat("dd/mm/yyyy"));
-					newCell.setCellStyle(cellStyle);
-					newCell.setCellValue(oldCell.getNumericCellValue());
-				} else
-					newCell.setCellValue(oldCell.getNumericCellValue());
-				break;
-			case Cell.CELL_TYPE_STRING:
-				newCell.setCellValue(oldCell.getRichStringCellValue());
-				break;
-			}
-
-		}
-	}
 	public static void main(String arg[]) {
-		String errorFileName = "5621ff8f441a04879c712600_error.txt";
+		String errorFileName = Consts.MEDI_HISTORY_ERROR_FILE;
 		Response response = readTextFile(errorFileName);
-		String excelFileName = "5621ff8f441a04879c712600_LalPath Patient List 3 Rev_2.xlsx";
-		/*
-		 * System.out.println(response.getPatients().size() +
-		 * response.getRowNumbers().size());
-		 */
+		String excelFileName = Consts.MEDI_HISTORY_INPUT_FILE;
 		processExcelFile(excelFileName, response);
 
 	}
+
 	static void processExcelFile(String fileName, Response response) {
 		try {
 			FileInputStream fis = new FileInputStream(BASE_PATH + fileName);
 			FileOutputStream out = new FileOutputStream(new File(BASE_PATH
-					+ "5621ff8f441a04879c712600.xlsx"));
+					+ Consts.MEDI_HISTORY_OUTPUT_FILE));
 			Workbook workbook = null;
 			XSSFWorkbook outWorkbook = new XSSFWorkbook();
 			XSSFSheet outSheet = outWorkbook.createSheet("Sheet");
@@ -127,9 +83,13 @@ public class Converter {
 			int rowCount = 0;
 			for (int i = 0; i < numberOfSheets; i++) {
 				Sheet sheet = workbook.getSheetAt(i);
-				for (int j : response.getRowNumbers()) {
-					Row row = sheet.getRow(j + 1);
-					copyRowToExcel(outWorkbook, outSheet, row);
+				for (RowNumberResponse rowNumberResponse : response
+						.getRowNumbers()) {
+					Row row = sheet.getRow(rowNumberResponse.getRowNo());
+					Cell cell = row.createCell(row.getLastCellNum() + 1);
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+					cell.setCellValue(rowNumberResponse.getMessage());
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
 					rowCount++;
 				}
 			}
@@ -137,7 +97,10 @@ public class Converter {
 			for (Patient patient : patients) {
 				Row row = searchPatientInfoInExcel(workbook, patient);
 				if (row != null) {
-					copyRowToExcel(outWorkbook, outSheet, row);
+					Cell cell = row.createCell(row.getLastCellNum() + 1);
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+					cell.setCellValue(patient.getErrorMessage());
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
 					rowCount++;
 				} else {
 					System.out.println("NULL");
@@ -160,13 +123,13 @@ public class Converter {
 				Row row = sheet.getRow(j);
 				if (row != null) {
 					String name = "";
-					if (row.getCell(1) != null) {
-						name = row.getCell(1).getStringCellValue();
+					if (row.getCell(2) != null) {
+						name = row.getCell(2).getStringCellValue();
 					}
 					String mob = "";
-					if (row.getCell(3) != null) {
-						row.getCell(3).setCellType(Cell.CELL_TYPE_STRING);
-						mob = row.getCell(3).getStringCellValue();
+					if (row.getCell(4) != null) {
+						row.getCell(4).setCellType(Cell.CELL_TYPE_STRING);
+						mob = row.getCell(4).getStringCellValue();
 					}
 
 					if (patient.getName().trim().equals(name.trim())) {
@@ -180,8 +143,6 @@ public class Converter {
 				}
 			}
 		}
-		System.out.println(patient.getName() + "" + " G "
-				+ patient.getMobileNumber());
 		return null;
 	}
 
@@ -192,9 +153,13 @@ public class Converter {
 			String mobileString = line.substring(line.indexOf("Mobile"));
 			String words[] = mobileString.split(" ");
 			if (words.length > 2) {
+				Patient patient = new Patient();
+				if (line.indexOf("error") != -1) {
+					patient.setErrorMessage(line.substring(line
+							.indexOf("error")));
+				}
 				String name = nameString.substring(5, line.indexOf("Mobile"));
 				String mobileNo = words[2];
-				Patient patient = new Patient();
 				patient.setName(name);
 				if (mobileNo.startsWith("+91")) {
 					mobileNo = mobileNo.substring(3, mobileNo.length());
@@ -211,18 +176,28 @@ public class Converter {
 
 	}
 
-	public static int getPatientDetailRowFromLine(String line)
+	public static RowNumberResponse getPatientDetailRowFromLine(String line)
 			throws TextReaderException {
 		try {
+			RowNumberResponse rowNumberResponse = null;
 			int rowNo = -1;
-			if (line.indexOf("Row no") != -1) {
-				String words[] = line.substring(line.indexOf("Row no") + 9)
-						.split(" ");
+			if (line.indexOf("Row Number") != -1) {
+				String words[] = line
+						.substring(line.indexOf("Row Number") + 11).split(" ");
 				if (words.length > 0) {
+					rowNumberResponse = new RowNumberResponse();
 					rowNo = Integer.parseInt(words[0]);
+					rowNumberResponse.setRowNo(rowNo);
+					if (line.indexOf("error") != -1) {
+						rowNumberResponse.setMessage(line.substring(line
+								.indexOf("error")));
+					} else {
+						rowNumberResponse.setMessage("");
+					}
+
 				}
 			}
-			return rowNo;
+			return rowNumberResponse;
 		} catch (Exception e) {
 			throw new TextReaderException(e.getMessage());
 		}

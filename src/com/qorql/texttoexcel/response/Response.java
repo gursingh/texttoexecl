@@ -6,7 +6,7 @@ import com.qorql.texttoexcel.Patient;
 
 public class Response {
 	private List<Patient> patients;
-	private List<Integer> rowNumbers;
+	private List<RowNumberResponse> rowNumbers;
 
 	public List<Patient> getPatients() {
 		return patients;
@@ -16,11 +16,12 @@ public class Response {
 		this.patients = patients;
 	}
 
-	public List<Integer> getRowNumbers() {
+	public List<RowNumberResponse> getRowNumbers() {
 		return rowNumbers;
 	}
 
-	public void setRowNumbers(List<Integer> rowNumbers) {
+	public void setRowNumbers(List<RowNumberResponse> rowNumbers) {
 		this.rowNumbers = rowNumbers;
 	}
+
 }
