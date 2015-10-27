@@ -81,11 +81,14 @@ public class MedHistoryConverter {
 			}
 			int numberOfSheets = workbook.getNumberOfSheets();
 			int rowCount = 0;
-			for (int i = 0; i < numberOfSheets; i++) {
+			for (int i = 0; i < 1; i++) {
 				Sheet sheet = workbook.getSheetAt(i);
 				for (RowNumberResponse rowNumberResponse : response
 						.getRowNumbers()) {
 					Row row = sheet.getRow(rowNumberResponse.getRowNo());
+					if(row==null){
+						System.out.println("dfscx");
+					}
 					Cell cell = row.createCell(row.getLastCellNum() + 1);
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cell.setCellValue(rowNumberResponse.getMessage());
