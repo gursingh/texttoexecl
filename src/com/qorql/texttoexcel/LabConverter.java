@@ -88,14 +88,11 @@ public class LabConverter {
 				Sheet sheet = workbook.getSheetAt(i);
 				for (RowNumberResponse rowNumberResponse : response
 						.getRowNumbers()) {
-					Row row = sheet.getRow(rowNumberResponse.getRowNo() + 1);
-					if (row == null) {
-						System.out.println("dfv");
-					}
+					Row row = sheet.getRow(rowNumberResponse.getRowNo());
 					Cell cell = row.createCell(row.getLastCellNum() + 1);
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cell.setCellValue(rowNumberResponse.getMessage());
-					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row, true);
 					rowCount++;
 				}
 			}
@@ -106,7 +103,7 @@ public class LabConverter {
 					Cell cell = row.createCell(row.getLastCellNum() + 1);
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cell.setCellValue(patient.getErrorMessage());
-					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row, true);
 					rowCount++;
 				} else {
 					System.out.println("NULL");

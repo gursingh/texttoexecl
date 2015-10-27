@@ -9,7 +9,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelUtil {
 	public static void copyRowToExcel(XSSFWorkbook wb, XSSFSheet outSheet,
-			Row row) {
+			Row row, boolean isLabFile) {
 		int rowNo = outSheet.getLastRowNum() + 1;
 		Row outRow = outSheet.createRow(rowNo);
 		for (int i = 0; i < row.getLastCellNum(); i++) {
@@ -32,15 +32,34 @@ public class ExcelUtil {
 					newCell.setCellFormula(oldCell.getCellFormula());
 					break;
 				case Cell.CELL_TYPE_NUMERIC:
-					if (i == 1||i == 5) {
-						CellStyle cellStyle = wb.createCellStyle();
-						CreationHelper createHelper = wb.getCreationHelper();
-						cellStyle.setDataFormat(createHelper.createDataFormat()
-								.getFormat("dd/mm/yyyy"));
-						newCell.setCellStyle(cellStyle);
-						newCell.setCellValue(oldCell.getNumericCellValue());
-					} else
-						newCell.setCellValue(oldCell.getNumericCellValue());
+					if (isLabFile) {
+						if (i == 4) {
+							CellStyle cellStyle = wb.createCellStyle();
+							CreationHelper createHelper = wb
+									.getCreationHelper();
+							cellStyle
+									.setDataFormat(createHelper
+											.createDataFormat().getFormat(
+													"dd/mm/yyyy"));
+							newCell.setCellStyle(cellStyle);
+							newCell.setCellValue(oldCell.getNumericCellValue());
+						} else
+							newCell.setCellValue(oldCell.getNumericCellValue());
+					} else {
+						if (i == 1 || i == 5) {
+							CellStyle cellStyle = wb.createCellStyle();
+							CreationHelper createHelper = wb
+									.getCreationHelper();
+							cellStyle
+									.setDataFormat(createHelper
+											.createDataFormat().getFormat(
+													"dd/mm/yyyy"));
+							newCell.setCellStyle(cellStyle);
+							newCell.setCellValue(oldCell.getNumericCellValue());
+						} else
+							newCell.setCellValue(oldCell.getNumericCellValue());
+					}
+
 					break;
 				case Cell.CELL_TYPE_STRING:
 					newCell.setCellValue(oldCell.getRichStringCellValue());

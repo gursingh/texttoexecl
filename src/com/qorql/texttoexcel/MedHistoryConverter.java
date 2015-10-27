@@ -89,7 +89,7 @@ public class MedHistoryConverter {
 					Cell cell = row.createCell(row.getLastCellNum() + 1);
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cell.setCellValue(rowNumberResponse.getMessage());
-					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row, false);
 					rowCount++;
 				}
 			}
@@ -100,7 +100,7 @@ public class MedHistoryConverter {
 					Cell cell = row.createCell(row.getLastCellNum() + 1);
 					cell.setCellType(Cell.CELL_TYPE_STRING);
 					cell.setCellValue(patient.getErrorMessage());
-					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row);
+					ExcelUtil.copyRowToExcel(outWorkbook, outSheet, row, false);
 					rowCount++;
 				} else {
 					System.out.println("NULL");
